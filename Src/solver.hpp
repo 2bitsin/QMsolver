@@ -40,6 +40,7 @@ struct solver
 
 	auto solve ()
 	{
+		/* Populate implicant table */
 		const auto xcl2 = term_type::length;
 		auto cl2 = 0u;
 		while(cl2 < xcl2 - 1u)
@@ -51,6 +52,31 @@ struct solver
 			++cl2;
 		}
 	
+		/* Populate coverage table */
+		for (auto&& mt: imp_table[0])
+		{
+			for(auto tid = 1u; tid <= cl2; ++tid)
+			for(auto&& imp: imp_table[tid])
+				if (imp.contains(mt))
+					cov_table[mt].emplace_back(&imp);
+		}
+
+		/* Print coverage */
+		for(auto&& [key, tbl] : cov_table)
+		{
+			std::cout 
+				<< key.to_string()
+				<< " (" << tbl.size() << ") " 
+				<< "\n";
+			for(auto* pimp : tbl)
+			{
+				std::cout 
+					<< " << " 
+					<< pimp->to_string() 
+					<< " (" << pimp->cardlog2() << ") " 
+					<< "\n";
+			}			
+		}
 		
 
 		return 1;
@@ -61,7 +87,7 @@ private:
 	<	std::vector<term_type>,
 		term_type::length>
 		imp_table;
-	std::unordered_map<value_type, 
+	std::unordered_map<term_type, 
 		std::vector<term_type*>>
 		cov_table;
 };

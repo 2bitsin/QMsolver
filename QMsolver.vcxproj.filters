@@ -28,10 +28,10 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\popcount.hpp">
+    <ClInclude Include="Src\term.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\term.hpp">
+    <ClInclude Include="Src\utils.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -39,5 +39,10 @@
     <None Include="Src\solver.hpp">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="term.natvis">
+      <Filter>Source Files</Filter>
+    </Natvis>
   </ItemGroup>
 </Project>

@@ -76,3 +76,31 @@ auto popcount (_Qtype value)
 	return _fallback_popcount (value);
 #endif
 }
+
+ /*
+	*	Utility functions to circumvent stupid int promotion rules >: (
+	*/
+
+template <typename _Itype>
+auto not_(_Itype i)
+{
+	return _Itype(~i);
+}
+
+template <typename _Itype>
+auto xor_(_Itype lhs, std::enable_if_t<true, _Itype> rhs)
+{	
+	return _Itype(lhs ^ rhs);
+}
+
+template <typename _Itype>
+auto and_(_Itype lhs, std::enable_if_t<true, _Itype> rhs)
+{	
+	return _Itype(lhs & rhs);
+}
+
+template <typename _Itype>
+auto _or(_Itype lhs, std::enable_if_t<true, _Itype> rhs)
+{	
+	return _Itype(lhs | rhs);
+}

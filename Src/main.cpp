@@ -8,7 +8,7 @@
 #include <iterator>
 #include <string>
 
-#include "popcount.hpp"
+#include "utils.hpp"
 #include "term.hpp"
 #include "solver.hpp"
 
@@ -41,6 +41,7 @@ using args_t = std::vector<std::string_view>;
 int main (int argc, char** argv)
 {
 	args_t args{argv, argv+argc};
+	test_term();
 
 	std::vector<std::uint8_t> input;
 	parse_arguments(input, std::cin);	
@@ -61,7 +62,24 @@ void test_term ()
 	auto f = "10011100"_t8;
 	auto g = "****0000"_t8;
 	auto h = "*0*0*0*0"_t8;
+	auto i = "11011101"_t8;
+	auto j = "11010101"_t8;
+	auto k = "11010111"_t8;
+	auto l = "11*10111"_t8;
 
+	auto ij = combine(i, j);
+	auto ik = combine(i, k);
+	auto kl = combine(k, l);
+	auto lk = absorb(l, k);
+
+	assert(ij.has_value());
+	assert(!ik.has_value());
+	assert(!kl.has_value());
+	assert(lk.has_value());
+
+	assert(ij.value().to_string() == "1101*101");
+	assert(lk.value().to_string() == "11*10111");
+	
 
 	assert (a.to_string () == "*101*101");
 	assert (b.to_string () == "110*110*");
@@ -69,6 +87,7 @@ void test_term ()
 	assert (d.to_string () == "*11*110*");
 	assert (e.to_string () == "**0*110*");
 	assert (f.to_string () == "10011100");
+	
 
 	assert (a.cardlog2() == 2);
 	assert (b.cardlog2() == 2);
@@ -88,3 +107,4 @@ void test_term ()
 	assert (d.contains (f) == false);
 
 }
+

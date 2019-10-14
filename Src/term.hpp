@@ -4,7 +4,7 @@
 #include <optional>
 #include <experimental/generator>
 
-#include "popcount.hpp"
+#include "utils.hpp"
 
 template <typename T>
 struct term
@@ -55,17 +55,25 @@ struct term
 
 	constexpr bool contains (value_type b) const
 	{
-		return (b & mask) == bits;
+		return and_(b, mask) == bits;
 	}
 
-	constexpr bool contains (const term<T>& b) const
+	constexpr bool contains (const term<value_type>& b) const
 	{
-		if (mask == b.mask)
-			return bits == b.bits;
+		return (*this) == b || superset_of(b); 
+	}
+	
+	constexpr bool subset_of (const term<value_type>& b) const
+	{
+		return b.superset_of(*this);
+	}
+
+	constexpr bool superset_of (const term<T>& b) const
+	{
 		const auto carddiff = cardlog2 () - b.cardlog2 ();
 		if (carddiff <= 0)
 			return false;
-		const auto maskdiff = popcount (inv_mask () ^ b.inv_mask ());
+		const auto maskdiff = popcount (xor_(inv_mask (), b.inv_mask ()));
 		if (maskdiff != carddiff)
 			return false;
 		return (bits & mask) == (b.bits & mask);
@@ -118,37 +126,77 @@ struct term
 		co_return;
 	}
 
-	friend inline constexpr auto distance (const term_type& a, const term_type& b)
-		-> std::optional<int>
+	friend constexpr auto operator == (const term_type& lhs, const term_type& rhs)
 	{
-		if (a.mask != b.mask)
-			return popcount
-			( (a.bits & a.mask)
-			^ (b.bits & b.mask));
-		return {};
+		return lhs.mask == rhs.mask && lhs.bits == rhs.bits;
 	}
 
-	friend inline constexpr auto merge (const term_type& a, const term_type& b)
-		-> std::optional<term_type>
+	friend constexpr auto operator != (const term_type& lhs, const term_type& rhs)
 	{
-		if (a.mask == b.mask)
-		{
-			const auto aa = a.bits & a.mask;
-			const auto bb = b.bits & b.mask;
-			const auto m0 = aa ^ bb;
-			const auto mm = a.mask & ~m0;
-			if (popcount(m0) == 1)
-				return term_type{a.bits, mm};
-
-		}
+		return !(lhs == rhs);
 	}
+
+	friend constexpr auto operator < (const term_type& lhs, const term_type& rhs)
+	{
+		return lhs.subset_of(rhs);
+	}
+
+	friend constexpr auto operator > (const term_type& lhs, const term_type& rhs)
+	{
+		return lhs.superset_of(rhs);
+	}
+
+	friend constexpr auto operator <= (const term_type& lhs, const term_type& rhs)
+	{
+		return lhs == rhs || lhs < rhs;
+	}
+
+	friend constexpr auto operator >= (const term_type& lhs, const term_type& rhs)
+	{
+		return lhs == rhs || lhs > rhs;
+	}
+
 
 	value_type mask;
 	value_type bits;
 };
 
+template <typename value_type>
+inline constexpr auto distance (const term<value_type>& a, const term<value_type>& b)
+	-> std::optional<int>
+{
+	if (a.mask != b.mask)
+		return popcount(xor_
+		(	and_(a.bits, a.mask),
+			and_(b.bits, b.mask)));
+	return {};
+}
+
+template <typename value_type>
+inline constexpr auto combine (const term<value_type>& a, const term<value_type>& b)
+	-> std::optional<term<value_type>>
+{
+	const auto aa = and_(a.bits, a.mask);
+	const auto bb = and_(b.bits, b.mask);
+	auto m0 = xor_(aa, bb);
+	auto mm = and_(a.mask, not_(m0));
+
+	if (a.mask == b.mask && popcount(m0) == 1)
+		return term<value_type>{a.bits, mm};
+	return std::nullopt;
+}
 
 
+template <typename value_type>
+inline constexpr auto absorb (const term<value_type>& a, const term<value_type>& b)
+	-> std::optional<term<value_type>>
+{
+	if (a.contains(b))
+		return a;
+	if (b.contains(a))
+		return b;
+	return std::nullopt;
+}
 
 auto operator ""_t8 (const char* dgt, std::size_t len)
 {
@@ -168,4 +216,17 @@ auto operator ""_t32 (const char* dgt, std::size_t len)
 auto operator ""_t64 (const char* dgt, std::size_t len)
 {
 	return term<std::uint64_t>{ {dgt, len}};
+}
+
+namespace std
+{
+	template <typename T>
+	struct hash<term<T>>
+	{
+		auto operator () (const term<T>& t) const 
+		{
+			static constexpr const std::hash<T> h;
+			return h(t.mask)^h(t.bits);
+		}
+	};
 }

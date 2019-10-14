@@ -25,11 +25,14 @@
     <Text Include="Cwd\in0.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\popcount.hpp" />
+    <ClInclude Include="Src\utils.hpp" />
     <ClInclude Include="Src\term.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Src\solver.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="term.natvis" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

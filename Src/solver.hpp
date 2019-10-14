@@ -3,6 +3,8 @@
 #include <vector>
 #include <array>
 #include <algorithm>
+#include <unordered_set>
+#include <unordered_map>
 #include "term.hpp"
 
 template <typename _Qtype>
@@ -12,43 +14,54 @@ struct solver
 	using term_type = term<value_type>;
 
 	solver (std::vector<value_type> minterms)
-	: minterms (std::move (minterms))
+	: imp_table{std::vector<term_type>{
+			minterms.begin (), 
+			minterms.end ()
+		}}
 	{}
 
-	auto solve ()
-	{		
-		std::array
-		<	std::vector<term_type>,
-			term_type::length> 
-			grouped;
-
-		grouped[0] = implicants;
-		
-		for(auto g = 0u; g < grouped.size(); ++g)
+	auto merge_pass(std::vector<term_type>& dst, 
+		const std::vector<term_type>& src)
+	{
+		std::unordered_set<term_type> prev;
+		for (auto i = 0u; i < src.size() - 1u; ++i)
+		for (auto j = i + 1u; j < src.size(); ++j)
 		{
-			const auto len = grouped[g].size();
-			if (len == 0)
-				break;
-			for(auto j = 0u; j < len - 1u; ++j)
-			{
-				const auto& lhs = implicants[j];
-				for(auto i = j; i < len; ++i)
-				{
-					const auto& rhs = implicants[i];
-					if (rhs.mask != lhs.mask)
-						continue;
-					const auto dist = distance(lhs, rhs);
-					if (!dist.has_value() || dist.value() != 1)
-						continue;					
-					grouped[g+1].push_back(merge(lhs, rhs));
-				}
-			}
+				auto ppatt = combine(src[i], src[j]);
+				if (!ppatt.has_value())
+					continue;
+				if (prev.count(ppatt.value()))
+					continue;
+				dst.emplace_back(ppatt.value());
+				prev.emplace(ppatt.value());
 		}
+		return dst.size();
+	}
 
-			
+	auto solve ()
+	{
+		const auto xcl2 = term_type::length;
+		auto cl2 = 0u;
+		while(cl2 < xcl2 - 1u)
+		{
+			if (!merge_pass
+			(	imp_table[cl2 + 1ull], 
+				imp_table[cl2]))
+				break;
+			++cl2;
+		}
+	
+		
+
 		return 1;
 	}
 
 private:
-	std::vector<value_type> minterms;
+	std::array
+	<	std::vector<term_type>,
+		term_type::length>
+		imp_table;
+	std::unordered_map<value_type, 
+		std::vector<term_type*>>
+		cov_table;
 };

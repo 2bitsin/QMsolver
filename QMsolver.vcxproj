@@ -24,6 +24,9 @@
   <ItemGroup>
     <Text Include="Cwd\in0.txt" />
     <Text Include="Cwd\in1.txt" />
+    <Text Include="Cwd\in2.txt" />
+    <Text Include="Cwd\in3.txt" />
+    <Text Include="Cwd\in4.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\utils.hpp" />

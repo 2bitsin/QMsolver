@@ -29,6 +29,15 @@
     <Text Include="Cwd\in1.txt">
       <Filter>Cwd</Filter>
     </Text>
+    <Text Include="Cwd\in2.txt">
+      <Filter>Cwd</Filter>
+    </Text>
+    <Text Include="Cwd\in3.txt">
+      <Filter>Cwd</Filter>
+    </Text>
+    <Text Include="Cwd\in4.txt">
+      <Filter>Cwd</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\term.hpp">

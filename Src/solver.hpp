@@ -70,6 +70,19 @@ struct solver
 				}
 		}
 
+		std::vector<term_type> terms;
+		/* Collecting essential implicants */
+		for (auto&& [key, tbl] : cov_table)
+		{
+			if (tbl.size() != 1ul)
+				continue;
+			terms.emplace_back(*tbl.back());		
+		}
+		/* Erase covered terms */
+		for (auto&& t : terms)
+			for (auto&& k : t.explode())
+				cov_table.erase(k);
+
 		/* Print coverage */
 		for (auto&& [key, tbl] : cov_table)
 		{
@@ -86,6 +99,7 @@ struct solver
 					<< "\n";
 			}
 		}
+
 		return {};
 	}
 

@@ -13,81 +13,88 @@ struct solver
 	using value_type = _Qtype;
 	using term_type = term<value_type>;
 
+	static auto remove_duplicates (std::vector<value_type> in)
+		-> std::vector<term_type>
+	{
+		std::sort (in.begin (), in.end ());
+		auto ue = std::unique (in.begin (), in.end ());
+		return {in.begin (), ue};
+	}
+
 	solver (std::vector<value_type> minterms)
-	: imp_table{std::vector<term_type>{
-			minterms.begin (), 
-			minterms.end ()
-		}}
+	: imp_table{remove_duplicates (std::move (minterms))}
 	{}
 
-	auto merge_pass(std::vector<term_type>& dst, 
+	auto merge_pass (std::vector<term_type>& dst,
 		const std::vector<term_type>& src)
 	{
 		std::unordered_set<term_type> prev;
-		for (auto i = 0u; i < src.size() - 1u; ++i)
-		for (auto j = i + 1u; j < src.size(); ++j)
-		{
-				auto ppatt = combine(src[i], src[j]);
-				if (!ppatt.has_value())
+		for (auto i = 0u; i < src.size () - 1u; ++i)
+			for (auto j = i + 1u; j < src.size (); ++j)
+			{
+				auto ppatt = combine (src [i], src [j]);
+				if (!ppatt.has_value ())
 					continue;
-				if (prev.count(ppatt.value()))
+				if (prev.count (ppatt.value ()))
 					continue;
-				dst.emplace_back(ppatt.value());
-				prev.emplace(ppatt.value());
-		}
-		return dst.size();
+				dst.emplace_back (ppatt.value ());
+				prev.emplace (ppatt.value ());
+			}
+		return dst.size ();
 	}
 
-	auto solve ()
+	auto solve () -> std::vector<term_type>
 	{
 		/* Populate implicant table */
 		const auto xcl2 = term_type::length;
 		auto cl2 = 0u;
-		while(cl2 < xcl2 - 1u)
+		while (cl2 < xcl2 - 1u)
 		{
-			if (!merge_pass
-			(	imp_table[cl2 + 1ull], 
-				imp_table[cl2]))
+			auto& o = imp_table [cl2 + 1ull];
+			const auto& i = imp_table [cl2];
+			if (!merge_pass (o, i))
 				break;
 			++cl2;
 		}
-	
+
 		/* Populate coverage table */
-		for (auto&& mt: imp_table[0])
+		for (auto&& mt : imp_table [0])
 		{
-			for(auto tid = 1u; tid <= cl2; ++tid)
-			for(auto&& imp: imp_table[tid])
-				if (imp.contains(mt))
-					cov_table[mt].emplace_back(&imp);
+			for (auto tid = cl2; tid > 0; --tid)
+				for (auto&& imp : imp_table [tid])
+				{
+					if (imp.cardinality() >= imp_table[0].size())
+						return { imp };
+					if (imp.contains (mt))
+						cov_table [mt].emplace_back (&imp);
+				}
 		}
 
 		/* Print coverage */
-		for(auto&& [key, tbl] : cov_table)
+		for (auto&& [key, tbl] : cov_table)
 		{
-			std::cout 
-				<< key.to_string()
-				<< " (" << tbl.size() << ") " 
+			std::cout
+				<< key.to_string ()
+				<< " (" << tbl.size () << ") "
 				<< "\n";
-			for(auto* pimp : tbl)
+			for (auto* pimp : tbl)
 			{
-				std::cout 
-					<< " << " 
-					<< pimp->to_string() 
-					<< " (" << pimp->cardlog2() << ") " 
+				std::cout
+					<< " << "
+					<< pimp->to_string ()
+					<< " (" << pimp->cardlog2 () << ") "
 					<< "\n";
-			}			
+			}
 		}
-		
-
-		return 1;
+		return {};
 	}
 
 private:
 	std::array
-	<	std::vector<term_type>,
+		<	std::vector<term_type>,
 		term_type::length>
 		imp_table;
-	std::unordered_map<term_type, 
+	std::unordered_map<term_type,
 		std::vector<term_type*>>
 		cov_table;
 };

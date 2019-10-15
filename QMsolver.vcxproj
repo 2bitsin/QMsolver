@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Cwd\in0.txt" />
+    <Text Include="Cwd\in1.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\utils.hpp" />

@@ -47,8 +47,14 @@ int main (int argc, char** argv)
 	parse_arguments(input, std::cin);	
 	solver<std::uint8_t> s{input};
 
-	s.solve ();
-
+	auto result = s.solve ();
+	if (result.empty())
+	{
+		std::cerr << "Failed to find solution! \n";
+		return -1;
+	}
+	for(auto&& r : result)
+		std::cout << r.to_string() << "\n";	
 	return 0;
 }
 

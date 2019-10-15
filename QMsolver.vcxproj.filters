@@ -26,6 +26,9 @@
     <Text Include="Cwd\in0.txt">
       <Filter>Cwd</Filter>
     </Text>
+    <Text Include="Cwd\in1.txt">
+      <Filter>Cwd</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\term.hpp">

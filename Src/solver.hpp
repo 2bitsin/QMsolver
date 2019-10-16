@@ -45,9 +45,20 @@ struct solver
 
 	auto solve () -> std::vector<term_type>
 	{
+		auto max_cardinality_log2 = populate_implicant_table ();
+		auto cover_all = populate_coverate_table (max_cardinality_log2);
+		if (cover_all.has_value())
+			return { cover_all.value() };
+		auto essentials = pick_essential_implicants ();
+		print_coverage (std::cout);
+		return {};
+	}
+
+	auto populate_implicant_table ()
+	{
 		/* Populate implicant table */
-		const auto xcl2 = term_type::length;
 		auto cl2 = 0u;
+		const auto xcl2 = term_type::length;
 		while (cl2 < xcl2 - 1u)
 		{
 			auto& o = imp_table [cl2 + 1ull];
@@ -56,56 +67,68 @@ struct solver
 				break;
 			++cl2;
 		}
+		return cl2;
+	}
 
-		/* Populate coverage table */
-		for (auto&& mt : imp_table [0])
-		{
-			for (auto tid = cl2; tid > 0; --tid)
-				for (auto&& imp : imp_table [tid])
-				{
-					if (imp.cardinality() >= imp_table[0].size())
-						return { imp };
-					if (imp.contains (mt))
-						cov_table [mt].emplace_back (&imp);
-				}
-		}
-
-		std::vector<term_type> terms;
-		/* Collecting essential implicants */
-		for (auto&& [key, tbl] : cov_table)
-		{
-			if (tbl.size() != 1ul)
-				continue;
-			terms.emplace_back(*tbl.back());		
-		}
-		/* Erase covered terms */
-		for (auto&& t : terms)
-			for (auto&& k : t.explode())
-				cov_table.erase(k);
-
+	void print_coverage (std::ostream& cout)
+	{
 		/* Print coverage */
 		for (auto&& [key, tbl] : cov_table)
 		{
-			std::cout
+			cout
 				<< key.to_string ()
 				<< " (" << tbl.size () << ") "
 				<< "\n";
 			for (auto* pimp : tbl)
 			{
-				std::cout
+				cout
 					<< " << "
 					<< pimp->to_string ()
 					<< " (" << pimp->cardlog2 () << ") "
 					<< "\n";
 			}
 		}
+	}
 
-		return {};
+	auto populate_coverate_table (unsigned int cl2)
+		-> std::optional<term_type>
+	{
+		/* Populate coverage table */
+		for (auto&& mt : imp_table [0])
+		{
+			for (auto tid = cl2; tid > 0; --tid)
+				for (auto&& imp : imp_table [tid])
+				{
+					if (imp.cardinality () >= imp_table [0].size ())
+						return imp ;
+					if (imp.contains (mt))
+						cov_table [mt].emplace_back (&imp);
+				}
+		}
+		return std::nullopt;
+	}
+
+	
+	auto pick_essential_implicants ()
+	{
+		std::vector<term_type> terms;
+		/* Collecting essential implicants */
+		for (auto&& [key, tbl] : cov_table)
+		{
+			if (tbl.size () != 1ul)
+				continue;
+			terms.emplace_back (*tbl.back ());
+		}
+		/* Erase covered terms */
+		for (auto&& t : terms)
+			for (auto&& k : t.explode ())
+				cov_table.erase (k);
+		return terms;
 	}
 
 private:
 	std::array
-		<	std::vector<term_type>,
+	<	std::vector<term_type>,
 		term_type::length>
 		imp_table;
 	std::unordered_map<term_type,

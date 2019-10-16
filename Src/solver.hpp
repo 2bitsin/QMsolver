@@ -22,33 +22,32 @@ struct solver
 	}
 
 	solver (std::vector<value_type> minterms)
-	: imp_table{remove_duplicates (std::move (minterms))}
+		: imp_table{{remove_duplicates (std::move (minterms))}}
 	{}
 
 	auto merge_pass (std::vector<term_type>& dst,
 		const std::vector<term_type>& src)
 	{
-		std::unordered_set<term_type> prev;
-		for (auto i = 0u; i < src.size () - 1u; ++i)
-			for (auto j = i + 1u; j < src.size (); ++j)
-			{
-				auto ppatt = combine (src [i], src [j]);
-				if (!ppatt.has_value ())
-					continue;
-				if (prev.count (ppatt.value ()))
-					continue;
-				dst.emplace_back (ppatt.value ());
-				prev.emplace (ppatt.value ());
-			}
+		std::unordered_set<term_type> unique;
+		for (auto&& [lhs, rhs] :
+			each_pair (src.begin (), src.end ()))
+		{
+			auto ppatt = combine (lhs, rhs);
+			if (!ppatt.has_value ()
+				|| unique.count (ppatt.value ()))
+				continue;
+			dst.emplace_back (ppatt.value ());
+			unique.emplace (ppatt.value ());
+		}
 		return dst.size ();
 	}
 
 	auto solve () -> std::vector<term_type>
 	{
-		auto max_cardinality_log2 = populate_implicant_table ();
-		auto cover_all = populate_coverate_table (max_cardinality_log2);
-		if (cover_all.has_value())
-			return { cover_all.value() };
+		populate_implicant_table ();
+		auto cover_all = populate_coverate_table ();
+		if (cover_all.has_value ())
+			return {cover_all.value ()};
 		auto essentials = pick_essential_implicants ();
 		print_coverage (std::cout);
 		return {};
@@ -57,17 +56,10 @@ struct solver
 	auto populate_implicant_table ()
 	{
 		/* Populate implicant table */
-		auto cl2 = 0u;
-		const auto xcl2 = term_type::length;
-		while (cl2 < xcl2 - 1u)
-		{
-			auto& o = imp_table [cl2 + 1ull];
-			const auto& i = imp_table [cl2];
-			if (!merge_pass (o, i))
-				break;
-			++cl2;
-		}
-		return cl2;
+		std::vector<term_type> out;
+		while (imp_table.size () <= term_type::length
+			&& merge_pass (out, imp_table.back ()))
+			imp_table.emplace_back (std::move (out));
 	}
 
 	void print_coverage (std::ostream& cout)
@@ -90,25 +82,23 @@ struct solver
 		}
 	}
 
-	auto populate_coverate_table (unsigned int cl2)
+	auto populate_coverate_table ()
 		-> std::optional<term_type>
 	{
 		/* Populate coverage table */
-		for (auto&& mt : imp_table [0])
-		{
-			for (auto tid = cl2; tid > 0; --tid)
+		auto&& inputs = imp_table.front ();
+		for (auto&& mt : inputs)
+			for (auto tid = imp_table.size () - 1u; tid > 0; --tid)
 				for (auto&& imp : imp_table [tid])
 				{
-					if (imp.cardinality () >= imp_table [0].size ())
-						return imp ;
+					if (imp.cardinality () >= inputs.size ())
+						return imp;
 					if (imp.contains (mt))
 						cov_table [mt].emplace_back (&imp);
 				}
-		}
 		return std::nullopt;
 	}
 
-	
 	auto pick_essential_implicants ()
 	{
 		std::vector<term_type> terms;
@@ -127,9 +117,8 @@ struct solver
 	}
 
 private:
-	std::array
-	<	std::vector<term_type>,
-		term_type::length>
+	std::vector<
+		std::vector<term_type>>
 		imp_table;
 	std::unordered_map<term_type,
 		std::vector<term_type*>>

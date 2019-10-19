@@ -128,3 +128,25 @@ auto for_each_pair (_Callback&& f, _Iter b, _Iter e)
 	for (auto&& [lhs, rhs] : each_pair(b, e))
 		f (lhs, rhs);
 }
+
+template <typename _Container>
+auto reverse(_Container&& cont)	
+{
+	struct Proxy
+	{
+		_Container& cont;
+		Proxy(_Container& cont)
+		: cont(cont) 
+		{}
+
+		auto begin()		const { return cont.rbegin(); }
+		auto cbegin()		const { return cont.crbegin(); }
+		auto end()			const { return cont.rend(); }
+		auto cend()			const { return cont.crend(); }
+		auto rbegin()		const { return cont.begin(); }
+		auto crbegin()	const { return cont.cbegin(); }
+		auto rend()			const { return cont.end(); }
+		auto crend()		const { return cont.cend(); }
+	};
+	return Proxy {std::forward<_Container>(cont)};
+}

@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "term.hpp"
+#include "bfsearch.hpp"
 
 template <typename _Qtype>
 struct solver
@@ -48,9 +49,24 @@ struct solver
 		auto cover_all = populate_coverate_table ();
 		if (cover_all.has_value ())
 			return {cover_all.value ()};
-		auto essentials = pick_essential_implicants ();
-		print_coverage (std::cout);
-		return {};
+		//print_coverage (std::cout);
+		auto required = pick_essential_implicants ();
+
+		std::vector<value_type> term;
+		std::vector<term_type> impl;		
+
+		for (auto&& [k, v] : cov_table)
+			term.emplace_back(k.bits);
+		for (auto&& all : imp_table)
+			for (auto&& i : all)
+				impl.emplace_back(i);
+
+		bfsearch<value_type> bfs;
+		auto solution = bfs.find_solution(std::move(term), std::move(impl));
+		if (!solution.has_value())
+			return {};
+		required.insert(required.end(), solution->begin(), solution->end());
+		return required;
 	}
 
 	auto populate_implicant_table ()
@@ -88,8 +104,8 @@ struct solver
 		/* Populate coverage table */
 		auto&& inputs = imp_table.front ();
 		for (auto&& mt : inputs)
-			for (auto tid = imp_table.size () - 1u; tid > 0; --tid)
-				for (auto&& imp : imp_table [tid])
+			for (auto&& all_imps : reverse(imp_table))
+				for (auto&& imp : all_imps)
 				{
 					if (imp.cardinality () >= inputs.size ())
 						return imp;
@@ -104,11 +120,8 @@ struct solver
 		std::vector<term_type> terms;
 		/* Collecting essential implicants */
 		for (auto&& [key, tbl] : cov_table)
-		{
-			if (tbl.size () != 1ul)
-				continue;
-			terms.emplace_back (*tbl.back ());
-		}
+			if (tbl.size () == 1ul)				
+				terms.emplace_back (*tbl.back ());
 		/* Erase covered terms */
 		for (auto&& t : terms)
 			for (auto&& k : t.explode ())

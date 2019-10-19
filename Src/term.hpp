@@ -225,7 +225,7 @@ namespace std
 	{
 		auto operator () (const term<T>& t) const 
 		{
-			static constexpr const std::hash<T> h;
+			static constexpr const std::hash<T> h;			
 			return h(t.mask)^h(t.bits);
 		}
 	};

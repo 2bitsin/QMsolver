@@ -54,15 +54,16 @@ struct solver
 
 		std::vector<value_type> term;
 		std::vector<term_type> impl;		
-
 		for (auto&& [k, v] : cov_table)
 			term.emplace_back(k.bits);
 		for (auto&& all : imp_table)
 			for (auto&& i : all)
 				impl.emplace_back(i);
-
+		std::sort(impl.begin(), impl.end(), [](auto&& lhs, auto&& rhs) { return rhs.cardlog2() < lhs.cardlog2(); } );
+		for(auto&& t : impl)
+			std::cout << t.to_string() << " (" << t.cardlog2() << ")" << "\n";
 		bfsearch<value_type> bfs;
-		auto solution = bfs.find_solution(std::move(term), std::move(impl));
+ 		auto solution = bfs.find_solution(std::move(term), std::move(impl));
 		if (!solution.has_value())
 			return {};
 		required.insert(required.end(), solution->begin(), solution->end());

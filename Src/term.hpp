@@ -138,12 +138,12 @@ struct term
 
 	friend constexpr auto operator < (const term_type& lhs, const term_type& rhs)
 	{
-		return lhs.subset_of(rhs);
+		return lhs.mask != rhs.mask ? (lhs.mask < rhs.mask) : (lhs.bits < rhs.bits);
 	}
 
 	friend constexpr auto operator > (const term_type& lhs, const term_type& rhs)
 	{
-		return lhs.superset_of(rhs);
+		return rhs > lhs;
 	}
 
 	friend constexpr auto operator <= (const term_type& lhs, const term_type& rhs)

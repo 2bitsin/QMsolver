@@ -29,7 +29,6 @@
     <Text Include="Cwd\in4.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Src\bfsearch.hpp" />
     <ClInclude Include="Src\utils.hpp" />
     <ClInclude Include="Src\term.hpp" />
   </ItemGroup>

@@ -37,6 +37,20 @@ auto parse_arguments(std::vector<std::uint8_t>& input, std::istream& cin)
 	std::transform(ib, ie, bii, parse_interger);
 }
 
+template <typename T>
+auto verify(const std::vector<term<T>>& is, const std::vector<T>& ts)
+{
+	std::unordered_set<T> wi, wt;
+	for(auto&& i : is)
+		for (auto&& t : i.explode())
+			wi.emplace(t);
+	for(auto&& t : ts)
+		wt.emplace(t);
+	if (wi.size() != wt.size())
+		return false;
+	return wi == wt;
+}
+
 using args_t = std::vector<std::string_view>;
 int main (int argc, char** argv)
 {
@@ -48,7 +62,7 @@ int main (int argc, char** argv)
 	solver<std::uint8_t> s{input};
 
 	auto result = s.solve ();
-	if (result.empty())
+	if (result.empty() || !verify(result, input))
 	{
 		std::cerr << "Failed to find solution! \n";
 		return -1;
